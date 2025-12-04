@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ვეფხისტყაოსანი - ვიქტორინა</title>
+    
+    <!-- React & ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#4f46e5',
+                        secondary: '#818cf8',
+                        accent: '#c7d2fe',
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@100..900&display=swap');
+        body {
+            font-family: 'Noto Sans Georgian', sans-serif;
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* Custom scrollbar for the report section */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+<link rel="stylesheet" href="/index.css">
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col">
+
+    <div id="root" class="flex-grow flex flex-col"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // --- Data ---
+        const RAW_QUESTIONS = [
+            // Multiple Choice (1-20)
+            {
+                id: 1,
+                type: 'multiple',
+                question: "რას ამბობს ფარსადანი, რატომ გადაწყვიტა ქალიშვილის გათხოვება?",
+                options: [
+                    "მეფეს ომი სურდა და მოკავშირე სჭირდებოდა",
+                    "მოხუცებული იყო და ვაჟი არ ჰყავდა სამეფოს პატრონად",
+                    "ქალიშვილმა თავად სთხოვა გათხოვება",
+                    "მეფეს სურდა ინდოეთის გაერთიანება"
+                ],
+                correctAnswer: 1
+            },
+            {
+                id: 2,
+                type: 'multiple',
+                question: "ვინ შეარჩიეს ნესტანის საქმროდ?",
+                options: [
+                    "ნურადინ-ფრიდონი",
+                    "ინდოეთის მეზობელი მეფე",
+                    "ხვარაზმშას შვილი",
+                    "სარსიდანის შვილი"
+                ],
+                correctAnswer: 2
+            },
+            {
+                id: 3,
+                type: 'multiple',
+                question: "როგორი იყო ტარიელის პირველი რეაქცია მეფის გადაწყვეტილებაზე?",
+                options: [
+                    "მაშინვე უარი განაცხადა",
+                    "გაიქცა სასახლიდან",
+                    "გული შეუწუხდა, მაგრამ თანხმობა განაცხადა",
+                    "მეფეს ეჩხუბა"
+                ],
+                correctAnswer: 2
+            },
+            {
+                id: 4,
+                type: 'multiple',
+                question: "ვინ უამბო ტარიელს ნესტანის გადაკარგვის ამბავი?",
+                options: [
+                    "დავარმა",
+                    "ასმათმა",
+                    "მეფემ",
+                    "თავად ნესტანმა"
+                ],
+                correctAnswer: 1
+            },
+            {
+                id: 5,
+                type: 'multiple',
+                question: "რაში დაადანაშაულა ნესტანმა ტარიელი შეხვედრისას?",
+                options: [
+                    "სილაჩრეში",
+                    "ფიცისა და პირობის გატეხვაში",
+                    "მეფის ღალატში",
+                    "უყურადღებობაში"
+                ],
+                correctAnswer: 1
+            },
+            {
+                id: 6,
+                type: 'multiple',
+                question: "რა უპასუხა ტარიელმა ნესტანის საყვედურს?",
+                options: [
+                    "რომ მას მეფის ეშინოდა",
+                    "რომ მას სხვა უყვარდა",
+                    "რომ ის ინდოეთს და ნესტანს არავის დაუთმობდა",
+                    "რომ ის ქვეყნიდან წავიდოდა"
+                ],
+                correctAnswer: 2
+            },
+            {
+                id: 7,
+                type: 'multiple',
+                question: "რა დავალება მისცა ნესტანმა ტარიელს?",
+                options: [
+                    "მეფესთან დალაპარაკება",
+                    "ნესტანის მოტაცება",
+                    "ხვარაზმშას შვილის მოკვლა",
+                    "ინდოეთიდან გაქცევა"
+                ],
+                correctAnswer: 2
+            },
+            {
+                id: 8,
+                type: 'multiple',
+                question: "როგორ მოკლა ტარიელმა სასიძო?",
+                options: [
+                    "ხმლით განგმირა",
+                    "სვეტს მიარტყმევინა თავი",
+                    "ხანჯლით მოკლა",
+                    "ცხენით გადათელა"
+                ],
+                correctAnswer: 1
+            },
+            {
+                id: 9,
+                type: 'multiple',
+                question: "სად წავიდა ტარიელი სასიძოს მკვლელობის შემდეგ?",
+                options: [
+                    "უცხო ქვეყანაში",
+                    "ტყეში",
+                    "მონასტერში მოსანანიებლად",
+                    "საკუთარ გამაგრებულ ქალაქში"
+                ],
+                correctAnswer: 3
+            },
+            {
+                id: 10,
+                type: 'multiple',
+                question: "ვის დააბრალა ფარსადანმა მომხდარი ტრაგედია?",
+                options: [
+                    "ტარიელს",
+                    "ასმათს",
+                    "თავის დას, დავარს",
+                    "ნესტანს"
+                ],
+                correctAnswer: 2
+            },
+            {
+                id: 11,
+                type: 'multiple',
+                question: "რა უქნა დავარმა ნესტანს?",
+                options: [
+                    "დააპატიმრა",
+                    "სცემა, კიდობანში ჩასვა და ზღვაში გაუშვა",
+                    "მოკლა",
+                    "უდაბნოში გაუშვა"
+                ],
+                correctAnswer: 1
+            },
+            {
+                id: 12,
+                type: 'multiple',
+                question: "ვის დაავალა დავარმა ნესტანის გადაკარგვა?",
+                options: [
+                    "ასმათს",
+                    "ორ ზანგს (მონას)",
+                    "სამ დიდებულს",
+                    "ფარსადანს"
+                ],
+                correctAnswer: 1
+            },
+            {
+                id: 13,
+                type: 'multiple',
+                question: "როგორ დაასრულა სიცოცხლე დავარმა?",
+                options: [
+                    "მეფემ მოაკვლევინა",
+                    "ცხენის კუდზე გამოაბეს",
+                    "დანა დაიცა გულში",
+                    "ზღვაში გადავარდა"
+                ],
+                correctAnswer: 2
+            },
+            {
+                id: 14,
+                type: 'multiple',
+                question: "რამდენი კაცით წავიდა ტარიელი ნესტანის საძებნელად?",
+                options: [
+                    "100",
+                    "160",
+                    "200",
+                    "მარტო"
+                ],
+                correctAnswer: 1
+            },
+            {
+                id: 15,
+                type: 'multiple',
+                question: "რამდენ ხანს ეძებდა ტარიელი ნესტანს ზღვაში?",
+                options: [
+                    "ერთი წელი",
+                    "12 თვე",
+                    "20 თვე",
+                    "2 წელი"
+                ],
+                correctAnswer: 2
+            },
+            {
+                id: 16,
+                type: 'multiple',
+                question: "ვინ დარჩა ტარიელს თანმხლებად დევებთან ბრძოლამდე?",
+                options: [
+                    "მხოლოდ ასმათი",
+                    "ასმათი და ორი მონა",
+                    "არავინ",
+                    "ფრიდონი"
+                ],
+                correctAnswer: 1
+            },
+            {
+                id: 17,
+                type: 'multiple',
+                question: "სად შეხვდა ტარიელი ნურადინ-ფრიდონს?",
+                options: [
+                    "გამოქვაბულში",
+                    "სასახლეში",
+                    "ზღვის პირას",
+                    "ბრძოლის ველზე"
+                ],
+                correctAnswer: 2
+            },
+            {
+                id: 18,
+                type: 'multiple',
+                question: "რა მდგომარეობაში იყო ფრიდონი ტარიელთან შეხვედრისას?",
+                options: [
+                    "მძინარე",
+                    "დაკოდილი, ხელში გადატეხილი ხმლით",
+                    "გამარჯვებული და მხიარული",
+                    "ავადმყოფი"
+                ],
+                correctAnswer: 1
+            },
+            {
+                id: 19,
+                type: 'multiple',
+                question: "რას ვერ იყოფდა ფრიდონი ბიძაშვილებთან?",
+                options: [
+                    "ოქროს",
+                    "ტახტს",
+                    "ქალს",
+                    "კუნძულს"
+                ],
+                correctAnswer: 3
+            },
+            {
+                id: 20,
+                type: 'multiple',
+                question: "როგორ დააღწია თავი ფრიდონმა მტრებს?",
+                options: [
+                    "ცხენით გაიქცა",
+                    "ნავით გაიქცა",
+                    "ცურვით",
+                    "ტარიელი დაეხმარა"
+                ],
+                correctAnswer: 2
+            },
+            // True/False (21-30)
+            {
+                id: 21,
+                type: 'boolean',
+                question: "ტარიელმა მეფეს თავიდანვე კატეგორიული უარი უთხრა ქალიშვილის გათხოვებაზე.",
+                options: ["ჭეშმარიტია", "მცდარია"],
+                correctAnswer: 1
+            },
+            {
+                id: 22,
+                type: 'boolean',
+                question: "ფარსადანმა იცოდა, რომ ტარიელს მისი ქალიშვილი უყვარდა.",
+                options: ["ჭეშმარიტია", "მცდარია"],
+                correctAnswer: 0
+            },
+            {
+                id: 23,
+                type: 'boolean',
+                question: "სასიძოს დახვედრის ცერემონიალის ორგანიზება ტარიელს ჰქონდა მინდობილი.",
+                options: ["ჭეშმარიტია", "მცდარია"],
+                correctAnswer: 0
+            },
+            {
+                id: 24,
+                type: 'boolean',
+                question: "დავარმა ნესტანი უსაფრთხო ადგილას გადამალა.",
+                options: ["ჭეშმარიტია", "მცდარია"],
+                correctAnswer: 1
+            },
+            {
+                id: 25,
+                type: 'boolean',
+                question: "ნურადინ-ფრიდონი მულღაზანზარის ქალაქის პატრონი იყო.",
+                options: ["ჭეშმარიტია", "მცდარია"],
+                correctAnswer: 0
+            },
+            {
+                id: 26,
+                type: 'boolean',
+                question: "ფრიდონი სანადიროდ იყო გამოსული, როცა ბიძაშვილები თავს დაესხნენ.",
+                options: ["ჭეშმარიტია", "მცდარია"],
+                correctAnswer: 0
+            },
+            {
+                id: 27,
+                type: 'boolean',
+                question: "ტარიელმა და ფრიდონმა მტრის ნავები ერთმანეთს დააჯახეს.",
+                options: ["ჭეშმარიტია", "მცდარია"],
+                correctAnswer: 0
+            },
+            {
+                id: 28,
+                type: 'boolean',
+                question: "ასმათი ტარიელს დაუყოვნებლივ გაჰყვა ნესტანის საძებნელად წასულ ტარიელს.",
+                options: ["ჭეშმარიტია", "მცდარია"],
+                correctAnswer: 0
+            },
+            {
+                id: 29,
+                type: 'boolean',
+                question: "მეფემ სამი დიდებული გაგზავნა ტარიელთან სასაყვედუროდ.",
+                options: ["ჭეშმარიტია", "მცდარია"],
+                correctAnswer: 0
+            },
+            {
+                id: 30,
+                type: 'boolean',
+                question: "ნესტანი დავარმა მოკლა.",
+                options: ["ჭეშმარიტია", "მცდარია"],
+                correctAnswer: 1
+            }
+        ];
+
+        // --- Components ---
+
+        const StartScreen = ({ onStart }) => (
+            <div className="flex flex-col items-center justify-center min-h-[80vh] p-6 text-center space-y-8 fade-in">
+                <div className="bg-white p-10 rounded-3xl shadow-2xl max-w-2xl border-t-8 border-primary">
+                    <h1 className="text-4xl md:text-5xl font-bold text-slate-900 mb-6">ვეფხისტყაოსანი</h1>
+                    <p className="text-xl text-slate-600 mb-8 leading-relaxed">
+                        შეამოწმეთ თქვენი ცოდნა 
+                        <span className="block font-semibold mt-2 text-primary">ნესტანის გთხოვების თათბირიდან ფრიდონის მიერ ნესტანის ამბის მბობამდე</span>
+                    </p>
+                    <div className="flex flex-col space-y-2 mb-8 text-sm text-slate-500">
+                        <p>🔹 30 კითხვა</p>
+                    </div>
+                    <button 
+                        onClick={onStart}
+                        className="bg-primary hover:bg-indigo-700 text-white font-bold py-4 px-12 rounded-full text-lg transition-all transform hover:scale-105 shadow-lg active:scale-95"
+                    >
+                        ტესტის დაწყება
+                    </button>
+                </div>
+            </div>
+        );
+
+        const ResultScreen = ({ score, total, results, onRestart }) => {
+            const [copied, setCopied] = useState(false);
+            const percentage = Math.round((score / total) * 100);
+            
+            let message = "";
+            let colorClass = "";
+            if (percentage >= 90) {
+                message = "შესანიშნავი შედეგი! თქვენ ბრწყინვალედ იცნობთ ტექსტს.";
+                colorClass = "text-green-600";
+            } else if (percentage >= 70) {
+                message = "კარგი შედეგი! თუმცა დეტალების გადამეორება არ გაწყენდათ.";
+                colorClass = "text-blue-600";
+            } else {
+                message = "სამწუხაროა. გირჩევთ ტექსტი თავიდან წაიკითხოთ.";
+                colorClass = "text-red-600";
+            }
+
+            const generateReport = () => {
+                let text = `ვეფხისტყაოსნის ვიქტორინა - შედეგი\n`;
+                text += `ქულა: ${score}/${total} (${percentage}%)\n\n`;
+                
+                results.forEach((item, index) => {
+                    text += `${index + 1}. ${item.question.question}\n`;
+                    const userText = item.question.options[item.selectedAnswer];
+                    const correctText = item.question.options[item.question.correctAnswer];
+                    
+                    if (item.isCorrect) {
+                        text += `✅ პასუხი: ${userText}\n`;
+                    } else {
+                        text += `❌ თქვენი პასუხი: ${userText}\n`;
+                        text += `✅ სწორი პასუხი: ${correctText}\n`;
+                    }
+                    text += `\n`;
+                });
+                return text;
+            };
+
+            const handleCopy = () => {
+                const text = generateReport();
+                navigator.clipboard.writeText(text).then(() => {
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                }).catch(err => {
+                    alert("კოპირება ვერ მოხერხდა, გთხოვთ სცადოთ ხელით.");
+                });
+            };
+
+            return (
+                <div className="flex flex-col items-center justify-center py-10 px-4 fade-in w-full max-w-4xl mx-auto">
+                    <div className="bg-white p-8 md:p-10 rounded-3xl shadow-2xl w-full">
+                        <div className="text-center mb-8">
+                            <h2 className="text-3xl font-bold mb-6 text-slate-800">შედეგები</h2>
+                            
+                            <div className="relative w-40 h-40 mx-auto mb-6 flex items-center justify-center rounded-full border-8 border-slate-100">
+                                <div className={`text-4xl font-extrabold ${colorClass}`}>
+                                    {score}/{total}
+                                </div>
+                            </div>
+
+                            <p className="text-xl font-medium text-slate-700 mb-4">{message}</p>
+                            
+                            <div className="w-full bg-slate-200 rounded-full h-4 mb-8 max-w-md mx-auto">
+                                <div 
+                                    className="bg-primary h-4 rounded-full transition-all duration-1000" 
+                                    style={{ width: `${percentage}%` }}
+                                ></div>
+                            </div>
+
+                            <div className="flex flex-col sm:flex-row justify-center gap-4">
+                                <button 
+                                    onClick={onRestart}
+                                    className="bg-primary hover:bg-indigo-700 text-white font-bold py-3 px-8 rounded-xl transition-colors shadow-md flex items-center justify-center"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                    </svg>
+                                    თავიდან დაწყება
+                                </button>
+                                <button 
+                                    onClick={handleCopy}
+                                    className={`font-bold py-3 px-8 rounded-xl transition-all shadow-md flex items-center justify-center border-2 ${
+                                        copied 
+                                        ? "bg-green-100 border-green-500 text-green-700" 
+                                        : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300"
+                                    }`}
+                                >
+                                    {copied ? (
+                                        <>
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                            </svg>
+                                            დაკოპირდა!
+                                        </>
+                                    ) : (
+                                        <>
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                                            </svg>
+                                            შედეგების კოპირება
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="border-t border-slate-200 pt-8">
+                            <h3 className="text-xl font-bold text-slate-800 mb-4">დეტალური რეპორტი</h3>
+                            <div className="bg-slate-50 rounded-2xl p-4 max-h-[500px] overflow-y-auto custom-scrollbar border border-slate-200">
+                                {results.map((item, index) => (
+                                    <div key={index} className="mb-6 last:mb-0 border-b border-slate-200 last:border-0 pb-6 last:pb-0">
+                                        <div className="flex items-start">
+                                            <span className="bg-slate-200 text-slate-600 rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold mr-3 flex-shrink-0">
+                                                {index + 1}
+                                            </span>
+                                            <div className="w-full">
+                                                <p className="font-semibold text-slate-800 mb-3">{item.question.question}</p>
+                                                
+                                                <div className="space-y-2 text-sm">
+                                                    {item.isCorrect ? (
+                                                        <div className="flex items-center text-green-700 bg-green-50 p-3 rounded-lg border border-green-200">
+                                                            <svg className="w-5 h-5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                                            </svg>
+                                                            <span>
+                                                                <span className="font-bold">თქვენი პასუხი:</span> {item.question.options[item.selectedAnswer]}
+                                                            </span>
+                                                        </div>
+                                                    ) : (
+                                                        <>
+                                                            <div className="flex items-center text-red-700 bg-red-50 p-3 rounded-lg border border-red-200 mb-2">
+                                                                <svg className="w-5 h-5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                                                                </svg>
+                                                                <span>
+                                                                    <span className="font-bold">თქვენი პასუხი:</span> {item.question.options[item.selectedAnswer]}
+                                                                </span>
+                                                            </div>
+                                                            <div className="flex items-center text-green-700 bg-green-50 p-3 rounded-lg border border-green-200">
+                                                                <svg className="w-5 h-5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                                                </svg>
+                                                                <span>
+                                                                    <span className="font-bold">სწორი პასუხი:</span> {item.question.options[item.question.correctAnswer]}
+                                                                </span>
+                                                            </div>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const QuestionCard = ({ 
+            data, 
+            current, 
+            total, 
+            onAnswer 
+        }) => {
+            const [selectedOption, setSelectedOption] = useState(null);
+            const [isConfirmed, setIsConfirmed] = useState(false);
+
+            // Reset state when question changes
+            useEffect(() => {
+                setSelectedOption(null);
+                setIsConfirmed(false);
+            }, [data]);
+
+            const handleOptionClick = (index) => {
+                if (isConfirmed) return;
+                setSelectedOption(index);
+            };
+
+            const handleConfirm = () => {
+                if (selectedOption === null) return;
+                setIsConfirmed(true);
+                
+                // Wait a bit before moving to next question to show correct/wrong feedback
+                setTimeout(() => {
+                    // Pass the selected option index back to parent
+                    onAnswer(selectedOption);
+                }, 1200);
+            };
+
+            return (
+                <div className="flex flex-col items-center justify-center min-h-[80vh] p-4 md:p-6 fade-in w-full max-w-3xl mx-auto">
+                    {/* Progress Header */}
+                    <div className="w-full flex justify-between items-end mb-4 px-2">
+                        <span className="text-slate-500 font-semibold text-sm uppercase tracking-wider">კითხვა</span>
+                        <span className="text-2xl font-bold text-primary">{current} <span className="text-slate-400 text-lg">/ {total}</span></span>
+                    </div>
+                    
+                    {/* Progress Bar */}
+                    <div className="w-full bg-white h-2 rounded-full mb-8 shadow-inner overflow-hidden">
+                        <div 
+                            className="bg-primary h-full transition-all duration-500 ease-out"
+                            style={{ width: `${((current - 1) / total) * 100}%` }}
+                        ></div>
+                    </div>
+
+                    <div className="bg-white p-6 md:p-10 rounded-2xl shadow-xl w-full border border-slate-100">
+                        <h3 className="text-xl md:text-2xl font-bold text-slate-800 mb-8 leading-relaxed">
+                            {data.question}
+                        </h3>
+
+                        <div className="space-y-3">
+                            {data.options.map((option, index) => {
+                                let buttonClass = "w-full text-left p-4 rounded-xl border-2 transition-all duration-200 text-lg flex items-center ";
+                                
+                                if (isConfirmed) {
+                                    if (index === data.correctAnswer) {
+                                        buttonClass += "bg-green-100 border-green-500 text-green-800 font-semibold";
+                                    } else if (index === selectedOption) {
+                                        buttonClass += "bg-red-100 border-red-500 text-red-800";
+                                    } else {
+                                        buttonClass += "bg-slate-50 border-slate-100 text-slate-400 opacity-60";
+                                    }
+                                } else {
+                                    if (selectedOption === index) {
+                                        buttonClass += "bg-indigo-50 border-primary text-primary font-semibold shadow-md transform scale-[1.01]";
+                                    } else {
+                                        buttonClass += "bg-white border-slate-200 text-slate-700 hover:border-indigo-300 hover:bg-slate-50";
+                                    }
+                                }
+
+                                return (
+                                    <button 
+                                        key={index}
+                                        onClick={() => handleOptionClick(index)}
+                                        disabled={isConfirmed}
+                                        className={buttonClass}
+                                    >
+                                        <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center mr-4 flex-shrink-0 ${
+                                            isConfirmed && index === data.correctAnswer ? 'border-green-600 bg-green-600 text-white' :
+                                            isConfirmed && index === selectedOption ? 'border-red-500 bg-red-500 text-white' :
+                                            selectedOption === index ? 'border-primary bg-primary text-white' :
+                                            'border-slate-300 text-slate-400'
+                                        }`}>
+                                            {String.fromCharCode(65 + index)}
+                                        </div>
+                                        {option}
+                                    </button>
+                                );
+                            })}
+                        </div>
+
+                        <div className="mt-8 flex justify-end">
+                            <button
+                                onClick={handleConfirm}
+                                disabled={selectedOption === null || isConfirmed}
+                                className={`py-3 px-8 rounded-lg font-bold text-lg transition-all ${
+                                    selectedOption !== null && !isConfirmed
+                                    ? "bg-primary text-white hover:bg-indigo-700 shadow-lg transform active:scale-95"
+                                    : "bg-slate-200 text-slate-400 cursor-not-allowed"
+                                }`}
+                            >
+                                {isConfirmed ? "მოიცადეთ..." : "შემდეგი"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const App = () => {
+            const [gameState, setGameState] = useState('start'); // start, playing, result
+            const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+            const [score, setScore] = useState(0);
+            const [questions, setQuestions] = useState([]);
+            // New state to track all user answers
+            const [userAnswers, setUserAnswers] = useState([]);
+
+            const handleStart = () => {
+                // Fisher-Yates Shuffle algorithm to randomize question order
+                const shuffled = [...RAW_QUESTIONS];
+                for (let i = shuffled.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+                }
+                setQuestions(shuffled);
+                
+                setGameState('playing');
+                setCurrentQuestionIndex(0);
+                setScore(0);
+                setUserAnswers([]); // Reset answers
+            };
+
+            const handleAnswer = (selectedOptionIndex) => {
+                const currentQuestion = questions[currentQuestionIndex];
+                const isCorrect = selectedOptionIndex === currentQuestion.correctAnswer;
+
+                // Record the answer
+                setUserAnswers(prev => [...prev, {
+                    question: currentQuestion,
+                    selectedAnswer: selectedOptionIndex,
+                    isCorrect: isCorrect
+                }]);
+
+                if (isCorrect) {
+                    setScore(prev => prev + 1);
+                }
+
+                if (currentQuestionIndex + 1 < questions.length) {
+                    setCurrentQuestionIndex(prev => prev + 1);
+                } else {
+                    setGameState('result');
+                }
+            };
+
+            const handleRestart = () => {
+                setGameState('start');
+                setScore(0);
+                setCurrentQuestionIndex(0);
+                setQuestions([]);
+                setUserAnswers([]);
+            };
+
+            return (
+                <div className="w-full h-full">
+                    {gameState === 'start' && <StartScreen onStart={handleStart} />}
+                    
+                    {gameState === 'playing' && questions.length > 0 && (
+                        <QuestionCard 
+                            data={questions[currentQuestionIndex]}
+                            current={currentQuestionIndex + 1}
+                            total={questions.length}
+                            onAnswer={handleAnswer}
+                        />
+                    )}
+
+                    {gameState === 'result' && (
+                        <ResultScreen 
+                            score={score} 
+                            total={questions.length} 
+                            results={userAnswers}
+                            onRestart={handleRestart} 
+                        />
+                    )}
+                    
+                    <footer className="w-full text-center py-4 text-slate-400 text-sm mt-auto">
+                        <p>© 2025</p>
+                    </footer>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+<script type="module" src="/index.tsx"></script>
+</body>
+</html>
